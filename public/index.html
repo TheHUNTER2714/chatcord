@@ -183,38 +183,32 @@
             to { opacity: 0; visibility: hidden; }
         }
         
-        /* For PDF optimizations */
-        @media print {
-            body {
-                width: 100%;
-                height: auto;
-                overflow: visible;
-                background: white;
-            }
-            
-            #particles-js {
-                display: none;
-            }
-            
-            .chat-container {
-                height: auto;
-                min-height: auto;
-            }
-            
-            .messages-container, .user-list {
-                height: auto;
-                overflow: visible;
-            }
-
-            .container {
-                width: 100%;
-                max-width: none;
-            }
-
-            .glass-effect {
-                background: white;
-                border: 1px solid #e2e8f0;
-            }
+        /* Connection status indicator */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-status.connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        .connection-status.reconnecting {
+            background-color: #FF9800;
+            color: white;
         }
     </style>
 </head>
@@ -223,6 +217,10 @@
 
     <div id="notification" class="notification">
         <span id="notification-text">Message sent!</span>
+    </div>
+    
+    <div id="connection-status" class="connection-status hidden">
+        <span id="connection-status-text">Connecting...</span>
     </div>
 
     <div class="container mx-auto px-4 py-8">
@@ -356,498 +354,87 @@
     </div>
 
     <script>
-        // Particles.js configuration
-        document.addEventListener('DOMContentLoaded', function() {
-            particlesJS('particles-js', {
-                "particles": {
-                    "number": {
-                        "value": 80,
-                        "density": {
-                            "enable": true,
-                            "value_area": 800
-                        }
-                    },
-                    "color": {
-                        "value": "#ffffff"
-                    },
-                    "shape": {
-                        "type": "circle",
-                        "stroke": {
-                            "width": 0,
-                            "color": "#000000"
-                        },
-                        "polygon": {
-                            "nb_sides": 5
-                        }
-                    },
-                    "opacity": {
-                        "value": 0.5,
-                        "random": false,
-                        "anim": {
-                            "enable": false,
-                            "speed": 1,
-                            "opacity_min": 0.1,
-                            "sync": false
-                        }
-                    },
-                    "size": {
-                        "value": 3,
-                        "random": true,
-                        "anim": {
-                            "enable": false,
-                            "speed": 40,
-                            "size_min": 0.1,
-                            "sync": false
-                        }
-                    },
-                    "line_linked": {
-                        "enable": true,
-                        "distance": 150,
-                        "color": "#ffffff",
-                        "opacity": 0.4,
-                        "width": 1
-                    },
-                    "move": {
-                        "enable": true,
-                        "speed": 2,
-                        "direction": "none",
-                        "random": false,
-                        "straight": false,
-                        "out_mode": "out",
-                        "bounce": false,
-                        "attract": {
-                            "enable": false,
-                            "rotateX": 600,
-                            "rotateY": 1200
-                        }
-                    }
-                },
-                "interactivity": {
-                    "detect_on": "canvas",
-                    "events": {
-                        "onhover": {
-                            "enable": true,
-                            "mode": "grab"
-                        },
-                        "onclick": {
-                            "enable": true,
-                            "mode": "push"
-                        },
-                        "resize": true
-                    },
-                    "modes": {
-                        "grab": {
-                            "distance": 140,
-                            "line_linked": {
-                                "opacity": 1
-                            }
-                        },
-                        "bubble": {
-                            "distance": 400,
-                            "size": 40,
-                            "duration": 2,
-                            "opacity": 8,
-                            "speed": 3
-                        },
-                        "repulse": {
-                            "distance": 200,
-                            "duration": 0.4
-                        },
-                        "push": {
-                            "particles_nb": 4
-                        },
-                        "remove": {
-                            "particles_nb": 2
-                        }
-                    }
-                },
-                "retina_detect": true
-            });
+        // Enhanced Socket.IO configuration
+        const socket = io('https://chatcord-rp4q.onrender.com', {
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            randomizationFactor: 0.5,
+            timeout: 20000,
+            withCredentials: true,
+            extraHeaders: {
+                "Access-Control-Allow-Origin": "https://chatcord-rp4q.onrender.com"
+            }
         });
 
-        // Notification system
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            const notificationText = document.getElementById('notification-text');
+        // Connection status management
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connection-status');
+            const textElement = document.getElementById('connection-status-text');
             
-            notificationText.textContent = message;
-            notification.style.display = 'block';
+            statusElement.classList.remove('hidden', 'connected', 'disconnected', 'reconnecting');
             
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        // Utility functions
-        function generateRoomCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) {
-                code += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return code;
-        }
-        
-        function getCurrentTimestamp() {
-            return new Date().toISOString();
-        }
-        
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        // DOM Elements
-        const landingPage = document.getElementById('landing-page');
-        const createRoomPage = document.getElementById('create-room-page');
-        const roomCodePage = document.getElementById('room-code-page');
-        const chatRoomPage = document.getElementById('chat-room-page');
-        
-        const usernameInput = document.getElementById('username');
-        const createRoomBtn = document.getElementById('create-room-btn');
-        const joinRoomBtn = document.getElementById('join-room-btn');
-        const roomCodeInput = document.getElementById('room-code');
-        
-        const createRoomBackBtn = document.getElementById('create-room-back-btn');
-        const newRoomNameInput = document.getElementById('new-room-name');
-        const createRoomConfirmBtn = document.getElementById('create-room-confirm-btn');
-        
-        const roomCodeDisplay = document.getElementById('room-code-display');
-        const copyCodeBtn = document.getElementById('copy-code-btn');
-        const enterRoomBtn = document.getElementById('enter-room-btn');
-        
-        const roomNameDisplay = document.getElementById('room-name-display');
-        const roomCodeBadge = document.getElementById('room-code-badge');
-        const copyCodeBtn2 = document.getElementById('copy-code-btn-2');
-        const leaveRoomBtn = document.getElementById('leave-room-btn');
-        
-        const userList = document.getElementById('user-list');
-        const messagesContainer = document.getElementById('messages-container');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        
-        // Application State
-        let currentUser = null;
-        let currentRoom = null;
-        let socket = null;
-        
-        // Initialize Application
-        function init() {
-            // Connect to Socket.io server
-            socket = io('https://your-backend-service-url.onrender.com', {
-                transports: ['websocket'],
-                reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000
-            });
-
-            // Socket.io event handlers
-            socket.on('connect', () => {
-                console.log('Connected to server');
-            });
-
-            socket.on('disconnect', () => {
-                console.log('Disconnected from server');
-            });
-
-            socket.on('connect_error', (err) => {
-                console.error('Connection error:', err);
-                showNotification('Connection error. Trying to reconnect...');
-            });
-
-            socket.on('room_created', (room) => {
-                currentRoom = room;
-                roomCodeDisplay.textContent = room.code;
-                createRoomPage.classList.add('hidden');
-                roomCodePage.classList.remove('hidden');
-                showNotification('Room created successfully!');
-            });
-
-            socket.on('room_joined', ({ room, users }) => {
-                currentRoom = room;
-                roomNameDisplay.textContent = room.name;
-                roomCodeBadge.textContent = room.code;
-                landingPage.classList.add('hidden');
-                createRoomPage.classList.add('hidden');
-                roomCodePage.classList.add('hidden');
-                chatRoomPage.classList.remove('hidden');
-                updateUserList(users);
-                showNotification(`Joined room: ${room.name}`);
-                messageInput.focus();
-            });
-
-            socket.on('user_joined', (user) => {
-                showNotification(`${user.name} joined the room`);
-                loadUsers();
-            });
-
-            socket.on('user_left', (user) => {
-                showNotification(`${user.name} left the room`);
-                loadUsers();
-            });
-
-            socket.on('new_message', (message) => {
-                addMessageToUI(message);
-                scrollToBottom();
-            });
-
-            socket.on('room_users', (users) => {
-                updateUserList(users);
-            });
-
-            socket.on('room_not_found', () => {
-                showNotification('Room not found. Please check the code and try again.');
-                roomCodeInput.classList.add('ring-2', 'ring-red-500');
-                setTimeout(() => {
-                    roomCodeInput.classList.remove('ring-red-500');
-                }, 2000);
-            });
-
-            // Set up event listeners
-            createRoomBtn.addEventListener('click', handleCreateRoomClick);
-            joinRoomBtn.addEventListener('click', handleJoinRoomClick);
-            createRoomBackBtn.addEventListener('click', () => {
-                createRoomPage.classList.add('hidden');
-                landingPage.classList.remove('hidden');
-            });
-            createRoomConfirmBtn.addEventListener('click', handleCreateRoomConfirm);
-            copyCodeBtn.addEventListener('click', () => copyToClipboard(roomCodeDisplay.textContent));
-            enterRoomBtn.addEventListener('click', () => enterChatRoom(currentRoom.code));
-            leaveRoomBtn.addEventListener('click', handleLeaveRoom);
-            copyCodeBtn2.addEventListener('click', () => copyToClipboard(roomCodeBadge.textContent));
-            messageForm.addEventListener('submit', handleSendMessage);
-
-            // Add input placeholder animation
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.classList.add('ring-2');
-                });
-                input.addEventListener('blur', function() {
-                    if (!this.value) {
-                        this.classList.remove('ring-2');
-                    }
-                });
-            });
-
-            // Focus username on load
-            setTimeout(() => {
-                usernameInput.focus();
-            }, 500);
-        }
-        
-        // Event Handlers
-        function handleCreateRoomClick() {
-            const username = usernameInput.value.trim();
-            if (!username) {
-                showNotification('Please enter your name first!');
-                usernameInput.classList.add('ring-2', 'ring-red-500');
-                setTimeout(() => {
-                    usernameInput.classList.remove('ring-red-500');
-                }, 2000);
-                usernameInput.focus();
-                return;
+            switch(status) {
+                case 'connected':
+                    statusElement.classList.add('connected');
+                    textElement.textContent = 'Connected';
+                    break;
+                case 'disconnected':
+                    statusElement.classList.add('disconnected');
+                    textElement.textContent = 'Disconnected';
+                    break;
+                case 'reconnecting':
+                    statusElement.classList.add('reconnecting');
+                    textElement.textContent = 'Reconnecting...';
+                    break;
+                case 'error':
+                    statusElement.classList.add('disconnected');
+                    textElement.textContent = 'Connection Error';
+                    break;
             }
             
-            // Store username
-            currentUser = {
-                id: socket.id,
-                name: username
-            };
-            
-            // Show room creation form
-            landingPage.classList.add('hidden');
-            createRoomPage.classList.remove('hidden');
-            
-            // Focus on room name input
-            setTimeout(() => {
-                newRoomNameInput.focus();
-            }, 300);
+            statusElement.classList.remove('hidden');
         }
-        
-        function handleJoinRoomClick() {
-            const username = usernameInput.value.trim();
-            const roomCode = roomCodeInput.value.trim().toUpperCase();
+
+        // Socket.IO event listeners
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            updateConnectionStatus('connected');
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.log('Disconnected:', reason);
+            updateConnectionStatus('disconnected');
             
-            if (!username) {
-                showNotification('Please enter your name first!');
-                usernameInput.classList.add('ring-2', 'ring-red-500');
-                setTimeout(() => {
-                    usernameInput.classList.remove('ring-red-500');
-                }, 2000);
-                usernameInput.focus();
-                return;
+            if (reason === 'io server disconnect') {
+                // The server forcibly disconnected the socket
+                socket.connect();
             }
-            
-            if (!roomCode) {
-                showNotification('Please enter a room code!');
-                roomCodeInput.classList.add('ring-2', 'ring-red-500');
-                setTimeout(() => {
-                    roomCodeInput.classList.remove('ring-red-500');
-                }, 2000);
-                roomCodeInput.focus();
-                return;
-            }
-            
-            // Store username
-            currentUser = {
-                id: socket.id,
-                name: username
-            };
-            
-            // Try to join the room
-            socket.emit('join_room', {
-                roomCode: roomCode,
-                user: currentUser
-            });
-        }
-        
-        function handleCreateRoomConfirm() {
-            const roomName = newRoomNameInput.value.trim();
-            if (!roomName) {
-                showNotification('Please give your room a name!');
-                newRoomNameInput.classList.add('ring-2', 'ring-red-500');
-                setTimeout(() => {
-                    newRoomNameInput.classList.remove('ring-red-500');
-                }, 2000);
-                newRoomNameInput.focus();
-                return;
-            }
-            
-            // Create a new room
-            socket.emit('create_room', {
-                roomName: roomName,
-                user: currentUser
-            });
-        }
-        
-        function handleLeaveRoom() {
-            if (!currentRoom || !currentUser) return;
-            
-            // Leave the room
-            socket.emit('leave_room', {
-                roomCode: currentRoom.code,
-                userId: currentUser.id
-            });
-            
-            // Reset state
-            currentUser = null;
-            currentRoom = null;
-            
-            // Clear messages and users
-            messagesContainer.innerHTML = `
-                <div class="text-center text-white text-opacity-80 my-6">
-                    <p class="text-lg">Welcome to the chat room!</p>
-                    <p class="text-sm mt-2">Start sending messages to communicate.</p>
-                </div>
-            `;
-            userList.innerHTML = '';
-            
-            // Go back to landing page
-            chatRoomPage.classList.add('hidden');
-            landingPage.classList.remove('hidden');
-            
-            // Clear inputs
-            messageInput.value = '';
-            showNotification('You have left the room');
-        }
-        
-        function handleSendMessage(e) {
-            e.preventDefault();
-            const messageText = messageInput.value.trim();
-            if (!messageText || !currentRoom || !currentUser) return;
-            
-            // Create message
-            const message = {
-                roomCode: currentRoom.code,
-                userId: currentUser.id,
-                userName: currentUser.name,
-                text: messageText,
-                timestamp: getCurrentTimestamp()
-            };
-            
-            // Send message
-            socket.emit('send_message', message);
-            
-            // Clear input
-            messageInput.value = '';
-            
-            // Focus back on input
-            messageInput.focus();
-        }
-        
-        function enterChatRoom(roomCode) {
-            if (!currentUser) return;
-            
-            socket.emit('join_room', {
-                roomCode: roomCode,
-                user: currentUser
-            });
-        }
-        
-        function loadUsers() {
-            if (!currentRoom) return;
-            
-            socket.emit('get_room_users', {
-                roomCode: currentRoom.code
-            });
-        }
-        
-        function updateUserList(users) {
-            if (!userList) return;
-            
-            userList.innerHTML = '';
-            
-            users.forEach(user => {
-                const li = document.createElement('li');
-                li.className = 'flex items-center user-item p-2 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer';
-                
-                const isCurrentUser = user.id === currentUser?.id;
-                
-                li.innerHTML = `
-                    <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                    <span class="text-white ${isCurrentUser ? 'font-semibold' : ''}">${user.name}</span>
-                    ${isCurrentUser ? ' <span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}
-                `;
-                
-                userList.appendChild(li);
-            });
-        }
-        
-        function addMessageToUI(message) {
-            const isSelf = message.userId === currentUser?.id;
-            const div = document.createElement('div');
-            div.className = `message ${isSelf ? 'self' : 'other'} p-4 my-1`;
-            
-            div.innerHTML = `
-                ${!isSelf ? `<div class="font-bold text-xs mb-1">${message.userName}</div>` : ''}
-                <div>${message.text}</div>
-                <div class="text-xs opacity-70 mt-1 ${isSelf ? 'text-blue-100' : 'text-gray-600'} text-right">
-                    ${formatTime(message.timestamp)}
-                </div>
-            `;
-            
-            messagesContainer.appendChild(div);
-        }
-        
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        // Helper functions
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    showNotification('Code copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                    showNotification('Failed to copy code');
-                });
-        }
-        
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', init);
+        });
+
+        socket.on('reconnect_attempt', (attempt) => {
+            console.log('Reconnection attempt:', attempt);
+            updateConnectionStatus('reconnecting');
+        });
+
+        socket.on('reconnect_failed', () => {
+            console.error('Reconnection failed');
+            updateConnectionStatus('error');
+            showNotification('Connection lost. Please refresh the page.');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            updateConnectionStatus('error');
+        });
+
+        // Rest of your existing JavaScript code...
+        // (Keep all your existing DOM manipulation, event handlers, and utility functions)
+
+        // Initialize connection status as connecting
+        updateConnectionStatus('reconnecting');
     </script>
 </body>
 </html>
