@@ -3,27 +3,30 @@ const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, { 
   cors: { 
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: ["https://chatcord-rp4q.onrender.com", "http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true
   },
   connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    maxDisconnectionDuration: 2 * 60 * 1000,
     skipMiddlewares: true
   }
 });
 
-// Serve static files
-app.use(express.static("public"));
+// Enable CORS for API routes
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", ["https://chatcord-rp4q.onrender.com", "http://localhost:3000"]);
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
 
 // Track active rooms with additional metadata
 const rooms = new Map();
-
-// Track socket connections to users
 const connections = new Map();
 
-// Helper function to generate room code
 function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding similar-looking chars
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -33,9 +36,8 @@ function generateRoomCode() {
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
-  connections.set(socket.id, null); // Track connection without user yet
+  connections.set(socket.id, null);
 
-  // Create a new room
   socket.on("create_room", (data, callback) => {
     try {
       if (!data?.roomName || !data?.user?.name) {
@@ -66,13 +68,18 @@ io.on("connection", (socket) => {
           name: data.roomName 
         }
       });
+      
+      // Emit event to frontend
+      socket.emit("room_created", { 
+        code: roomCode, 
+        name: data.roomName 
+      });
     } catch (error) {
       console.error("Room creation error:", error);
       callback({ status: "error", message: error.message });
     }
   });
 
-  // Join a room
   socket.on("join_room", (data, callback) => {
     try {
       if (!data?.roomCode || !data?.user?.name) {
@@ -92,7 +99,6 @@ io.on("connection", (socket) => {
         joinedAt: new Date().toISOString()
       };
 
-      // Prevent duplicate usernames in same room
       const usernameExists = Array.from(room.users.values()).some(
         u => u.name.toLowerCase() === user.name.toLowerCase()
       );
@@ -105,10 +111,7 @@ io.on("connection", (socket) => {
       connections.set(socket.id, { roomCode, user });
       socket.join(roomCode);
       
-      // Notify room about new user
       io.to(roomCode).emit("user_joined", user);
-      
-      // Send updated user list to all in room
       io.to(roomCode).emit("room_users", { 
         users: Array.from(room.users.values()),
         roomName: room.name
@@ -121,13 +124,22 @@ io.on("connection", (socket) => {
           name: room.name 
         }
       });
+      
+      // Emit event to frontend
+      socket.emit("room_joined", { 
+        room: { 
+          code: roomCode, 
+          name: room.name 
+        },
+        users: Array.from(room.users.values())
+      });
     } catch (error) {
       console.error("Join room error:", error);
       callback({ status: "error", message: error.message });
+      socket.emit("room_not_found");
     }
   });
 
-  // Handle messages with validation
   socket.on("send_message", (data, callback) => {
     try {
       if (!data?.roomCode || !data?.text) {
@@ -166,7 +178,27 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle disconnections
+  socket.on("get_room_users", (data, callback) => {
+    try {
+      if (!data?.roomCode) {
+        throw new Error("Room code required");
+      }
+
+      const room = rooms.get(data.roomCode);
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      callback({
+        status: "success",
+        users: Array.from(room.users.values())
+      });
+    } catch (error) {
+      console.error("Get room users error:", error);
+      callback({ status: "error", message: error.message });
+    }
+  });
+
   socket.on("disconnect", () => {
     const connection = connections.get(socket.id);
     if (!connection) return;
@@ -178,17 +210,14 @@ io.on("connection", (socket) => {
       const room = rooms.get(roomCode);
       room.users.delete(socket.id);
 
-      // Notify room about user leaving
       if (user) {
         io.to(roomCode).emit("user_left", user);
       }
 
-      // Clean up empty rooms
       if (room.users.size === 0) {
         rooms.delete(roomCode);
         console.log(`Room ${roomCode} deleted (empty)`);
       } else {
-        // Update user list for remaining users
         io.to(roomCode).emit("room_users", { 
           users: Array.from(room.users.values()),
           roomName: room.name
@@ -197,21 +226,21 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle connection errors
   socket.on("error", (error) => {
     console.error("Socket error:", error);
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({ error: "Internal server error" });
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy",
+    rooms: rooms.size,
+    connections: connections.size
+  });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket server ready at ws://localhost:${PORT}`);
 });
-
