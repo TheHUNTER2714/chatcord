@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatCord - Premium Landing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #4f46e5, #3b82f6, #9333ea, #06b6d4);
+      background-size: 400% 400%;
+      animation: gradientBackground 12s ease infinite;
+      color: white;
+    }
+
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .fade-in {
+      animation: fadeInUp 1.4s ease both;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+  <div class="text-center fade-in p-8 max-w-xl">
+    <h1 class="text-5xl font-extrabold mb-4 drop-shadow-lg">ChatCord</h1>
+    <p class="text-xl mb-8">Real-time, secure chat with modern UI & animated flair.</p>
+    <a href="chat/index.html">
+      <button class="bg-white text-indigo-700 font-semibold px-8 py-3 rounded-full shadow-xl hover:bg-indigo-100 transition duration-300">
+        Get Started
+      </button>
+    </a>
+  </div>
+
+</body>
+</html>
