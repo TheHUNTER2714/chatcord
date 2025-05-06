@@ -3,39 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ChatCord - Premium Landing</title>
+  <title>ChatCord – Premium</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(-45deg, #4f46e5, #3b82f6, #9333ea, #06b6d4);
-      background-size: 400% 400%;
-      animation: gradientBackground 12s ease infinite;
-      color: white;
+      height: 100vh;
+      overflow: hidden;
+      transition: background 1.5s ease;
     }
 
-    @keyframes gradientBackground {
+    .fade-in {
+      animation: fadeIn 1.4s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bg-animated {
+      background: linear-gradient(135deg, #4f46e5, #9333ea, #06b6d4, #3b82f6);
+      background-size: 600% 600%;
+      animation: animatedGradient 15s ease infinite;
+    }
+
+    @keyframes animatedGradient {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
-    .fade-in {
-      animation: fadeInUp 1.4s ease both;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="bg-animated text-white flex items-center justify-center">
 
-  <div class="text-center fade-in p-8 max-w-xl">
-    <h1 class="text-5xl font-extrabold mb-4 drop-shadow-lg">ChatCord</h1>
-    <p class="text-xl mb-8">Real-time, secure chat with modern UI & animated flair.</p>
+  <div class="text-center fade-in p-6 max-w-xl">
+    <h1 class="text-5xl font-extrabold mb-6 drop-shadow-lg">ChatCord</h1>
+    <p id="feature-text" class="text-lg opacity-90 mb-8 transition-all duration-700">
+      Secure, real-time chat with code-protected rooms.
+    </p>
     <a href="public/index.html">
       <button class="bg-white text-indigo-700 font-semibold px-8 py-3 rounded-full shadow-xl hover:bg-indigo-100 transition duration-300">
         Get Started
@@ -43,5 +50,26 @@
     </a>
   </div>
 
+  <script>
+    const features = [
+      "Secure, real-time chat with code-protected rooms.",
+      "Built for seamless conversations and collaboration.",
+      "Custom avatars, themes, and clean user interface.",
+      "No sign-up required — instant room access.",
+      "Built with Socket.IO, Express & TailwindCSS."
+    ];
+
+    function rotateFeatureText() {
+      const textEl = document.getElementById("feature-text");
+      const next = features[Math.floor(Math.random() * features.length)];
+      textEl.style.opacity = "0";
+      setTimeout(() => {
+        textEl.textContent = next;
+        textEl.style.opacity = "1";
+      }, 500);
+    }
+
+    setInterval(rotateFeatureText, 4000);
+  </script>
 </body>
 </html>
