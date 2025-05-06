@@ -11,16 +11,8 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       height: 100vh;
       overflow: hidden;
-      transition: background 1.5s ease;
-    }
-
-    .fade-in {
-      animation: fadeIn 1.4s ease both;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      position: relative;
+      color: white;
     }
 
     .bg-animated {
@@ -34,16 +26,41 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
+    .fade-in {
+      animation: fadeIn 1.4s ease both;
+      z-index: 10;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #bubbleCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .content {
+      z-index: 10;
+    }
   </style>
 </head>
-<body class="bg-animated text-white flex items-center justify-center">
+<body class="bg-animated flex items-center justify-center">
 
-  <div class="text-center fade-in p-6 max-w-xl">
+  <!-- Bubble Canvas -->
+  <canvas id="bubbleCanvas"></canvas>
+
+  <!-- Main Content -->
+  <div class="text-center fade-in p-6 max-w-xl content">
     <h1 class="text-5xl font-extrabold mb-6 drop-shadow-lg">ChatCord</h1>
     <p id="feature-text" class="text-lg opacity-90 mb-8 transition-all duration-700">
       Secure, real-time chat with code-protected rooms.
     </p>
-    <a href="public/index.html">
+    <a href="chat/index.html">
       <button class="bg-white text-indigo-700 font-semibold px-8 py-3 rounded-full shadow-xl hover:bg-indigo-100 transition duration-300">
         Get Started
       </button>
@@ -56,7 +73,7 @@
       "Built for seamless conversations and collaboration.",
       "Custom avatars, themes, and clean user interface.",
       "No sign-up required — instant room access.",
-      "Built with Socket.IO, Express & TailwindCSS."
+      "Powered by Socket.IO, Express & TailwindCSS."
     ];
 
     function rotateFeatureText() {
@@ -70,6 +87,53 @@
     }
 
     setInterval(rotateFeatureText, 4000);
+  </script>
+
+  <!-- Bubble Animation -->
+  <script>
+    const canvas = document.getElementById("bubbleCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let bubbles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createBubbles() {
+      for (let i = 0; i < 30; i++) {
+        bubbles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 10 + 5,
+          speedY: Math.random() * 1 + 0.5,
+          alpha: Math.random() * 0.4 + 0.1
+        });
+      }
+    }
+
+    function animateBubbles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let b of bubbles) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${b.alpha})`;
+        ctx.fill();
+        b.y -= b.speedY;
+        if (b.y < -b.radius) {
+          b.y = canvas.height + b.radius;
+          b.x = Math.random() * canvas.width;
+        }
+      }
+      requestAnimationFrame(animateBubbles);
+    }
+
+    createBubbles();
+    animateBubbles();
   </script>
 </body>
 </html>
