@@ -358,89 +358,117 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // Enhanced Socket.IO configuration
-        const socket = io('https://chatcord-rp4q.onrender.com', {
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
-            randomizationFactor: 0.5,
-            timeout: 20000,
-            withCredentials: true,
-            extraHeaders: {
-                "Access-Control-Allow-Origin": "https://chatcord-rp4q.onrender.com"
-            }
-        });
-
-        // Connection status management
-        function updateConnectionStatus(status) {
-            const statusElement = document.getElementById('connection-status');
-            const textElement = document.getElementById('connection-status-text');
-            
-            statusElement.classList.remove('hidden', 'connected', 'disconnected', 'reconnecting');
-            
-            switch(status) {
-                case 'connected':
-                    statusElement.classList.add('connected');
-                    textElement.textContent = 'Connected';
-                    break;
-                case 'disconnected':
-                    statusElement.classList.add('disconnected');
-                    textElement.textContent = 'Disconnected';
-                    break;
-                case 'reconnecting':
-                    statusElement.classList.add('reconnecting');
-                    textElement.textContent = 'Reconnecting...';
-                    break;
-                case 'error':
-                    statusElement.classList.add('disconnected');
-                    textElement.textContent = 'Connection Error';
-                    break;
-            }
-            
-            statusElement.classList.remove('hidden');
+    
+     <script>
+    const socket = io('https://chatcord-rp4q.onrender.com', {
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        randomizationFactor: 0.5,
+        timeout: 20000,
+        withCredentials: true,
+        extraHeaders: {
+            "Access-Control-Allow-Origin": "https://chatcord-rp4q.onrender.com"
         }
+    });
 
-        // Socket.IO event listeners
-        socket.on('connect', () => {
-            console.log('Connected to server');
-            updateConnectionStatus('connected');
-        });
+    let currentUsername = "";
+    let currentRoomCode = "";
 
-        socket.on('disconnect', (reason) => {
-            console.log('Disconnected:', reason);
-            updateConnectionStatus('disconnected');
-            
-            if (reason === 'io server disconnect') {
-                // The server forcibly disconnected the socket
-                socket.connect();
-            }
-        });
+    const messageForm = document.getElementById("message-form");
+    const messageInput = document.getElementById("message-input");
+    const messagesContainer = document.getElementById("messages-container");
 
-        socket.on('reconnect_attempt', (attempt) => {
-            console.log('Reconnection attempt:', attempt);
-            updateConnectionStatus('reconnecting');
-        });
+    // Connection status indicator
+    function updateConnectionStatus(status) {
+        const statusElement = document.getElementById('connection-status');
+        const textElement = document.getElementById('connection-status-text');
 
-        socket.on('reconnect_failed', () => {
-            console.error('Reconnection failed');
-            updateConnectionStatus('error');
-            showNotification('Connection lost. Please refresh the page.');
-        });
+        statusElement.classList.remove('hidden', 'connected', 'disconnected', 'reconnecting');
+        switch (status) {
+            case 'connected':
+                statusElement.classList.add('connected');
+                textElement.textContent = 'Connected';
+                break;
+            case 'disconnected':
+                statusElement.classList.add('disconnected');
+                textElement.textContent = 'Disconnected';
+                break;
+            case 'reconnecting':
+                statusElement.classList.add('reconnecting');
+                textElement.textContent = 'Reconnecting...';
+                break;
+            case 'error':
+                statusElement.classList.add('disconnected');
+                textElement.textContent = 'Connection Error';
+                break;
+        }
+    }
 
-        socket.on('connect_error', (error) => {
-            console.error('Connection error:', error);
-            updateConnectionStatus('error');
-        });
+    // Socket.IO connection handlers
+    socket.on('connect', () => {
+        updateConnectionStatus('connected');
+    });
 
-        // Rest of your existing JavaScript code...
-        // (Keep all your existing DOM manipulation, event handlers, and utility functions)
+    socket.on('disconnect', (reason) => {
+        updateConnectionStatus('disconnected');
+        if (reason === 'io server disconnect') socket.connect();
+    });
 
-        // Initialize connection status as connecting
+    socket.on('reconnect_attempt', () => {
         updateConnectionStatus('reconnecting');
-    </script>
+    });
+
+    socket.on('reconnect_failed', () => {
+        updateConnectionStatus('error');
+        alert("Connection lost. Please refresh the page.");
+    });
+
+    socket.on('connect_error', () => {
+        updateConnectionStatus('error');
+    });
+
+    updateConnectionStatus('reconnecting');
+
+    // Handle room join/create
+    socket.on('room_created', (room) => {
+        currentRoomCode = room.code;
+        currentUsername = room.users[0].name;
+    });
+
+    socket.on('room_joined', ({ room, users }) => {
+        currentRoomCode = room.code;
+        const self = users.find(u => u.id === socket.id);
+        if (self) currentUsername = self.name;
+    });
+
+    // Send message
+    messageForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        const message = {
+            roomCode: currentRoomCode,
+            name: currentUsername,
+            text: text
+        };
+
+        socket.emit("send_message", message);
+        messageInput.value = "";
+    });
+
+    // Display message
+    socket.on("new_message", (message) => {
+        const isSelf = message.name === currentUsername;
+        const div = document.createElement("div");
+        div.className = `message ${isSelf ? "self" : "other"} p-3`;
+        div.innerHTML = `<strong>${message.name}:</strong> ${message.text}`;
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+</script>
 </body>
 </html>
