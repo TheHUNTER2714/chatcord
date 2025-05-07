@@ -1,8 +1,9 @@
 const express = require("express");
+const path = require("path"); // added for serving static files
 const app = express();
 const server = require("http").createServer(app);
-const io = require("socket.io")(server, { 
-  cors: { 
+const io = require("socket.io")(server, {
+  cors: {
     origin: [
       "https://chatcord-rp4q.onrender.com",
       "http://localhost:3000"
@@ -17,6 +18,14 @@ const io = require("socket.io")(server, {
   }
 });
 
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
+
+// Route for landing page
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
+});
+
 // Health check
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -26,11 +35,11 @@ app.get("/health", (req, res) => {
   });
 });
 
-// === In-Memory Data ===
-const rooms = new Map(); // Map<roomCode, { name, code, users: [] }>
-const userRooms = new Map(); // Map<socket.id, roomCode>
+// In-memory data
+const rooms = new Map();
+const userRooms = new Map();
 
-// === Room Code Generator ===
+// Room code generator
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({ length: 6 }, () =>
@@ -38,11 +47,10 @@ function generateRoomCode() {
   ).join("");
 }
 
-// === Socket.IO Logic ===
+// Socket.IO logic
 io.on("connection", (socket) => {
   console.log("✅ New connection:", socket.id);
 
-  // === Create Room ===
   socket.on("create_room", ({ roomName, user }) => {
     const code = generateRoomCode();
     const room = {
@@ -59,7 +67,6 @@ io.on("connection", (socket) => {
     console.log(`📦 Room created: ${code}`);
   });
 
-  // === Join Room ===
   socket.on("join_room", ({ roomCode, user }) => {
     const room = rooms.get(roomCode);
     if (!room) {
@@ -75,7 +82,6 @@ io.on("connection", (socket) => {
     socket.to(roomCode).emit("user_joined", user);
   });
 
-  // === Get Room Users ===
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
     if (room) {
@@ -83,14 +89,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  // === Send Message ===
   socket.on("send_message", (message) => {
     const roomCode = message.roomCode;
     socket.to(roomCode).emit("new_message", message);
-    socket.emit("new_message", message); // This will send the message back to the sender
+    socket.emit("new_message", message);
   });
 
-  // === Leave Room ===
   socket.on("leave_room", ({ roomCode, userId }) => {
     const room = rooms.get(roomCode);
     if (room) {
@@ -101,7 +105,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // === Disconnect Cleanup ===
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", socket.id);
     const roomCode = userRooms.get(socket.id);
@@ -121,7 +124,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// === Server Start ===
+// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
