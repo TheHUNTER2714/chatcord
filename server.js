@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
   socket.on("send_message", (message) => {
     const roomCode = message.roomCode;
     socket.to(roomCode).emit("new_message", message);
+    socket.emit("new_message", message); // This will send the message back to the sender
   });
 
   // === Leave Room ===
