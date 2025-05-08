@@ -64,20 +64,25 @@ io.on("connection", (socket) => {
     console.log(`📦 Room created: ${code}`);
   });
 
-  socket.on("join_room", ({ roomCode, user }) => {
-    const room = rooms.get(roomCode);
-    if (!room) {
-      socket.emit("room_not_found");
-      return;
-    }
+socket.on("join_room", ({ roomCode, user }) => {
+  const room = rooms.get(roomCode);
+  if (!room) {
+    socket.emit("room_not_found");
+    return;
+  }
 
+  // Prevent duplicate entries
+  const alreadyInRoom = room.users.some(u => u.id === socket.id);
+  if (!alreadyInRoom) {
     room.users.push({ id: socket.id, name: user.name });
-    userRooms.set(socket.id, roomCode);
-    socket.join(roomCode);
+  }
 
-    socket.emit("room_joined", { room, users: room.users });
-    socket.to(roomCode).emit("user_joined", user);
-  });
+  userRooms.set(socket.id, roomCode);
+  socket.join(roomCode);
+
+  socket.emit("room_joined", { room, users: room.users });
+  socket.to(roomCode).emit("user_joined", user);
+});
 
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
