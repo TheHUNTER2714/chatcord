@@ -1,11 +1,11 @@
-const express = require("express");
 const path = require("path");
+const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
-const io = require("socket.io")(server, { 
-  cors: { 
+const io = require("socket.io")(server, {
+  cors: {
     origin: [
-      "https://chatcord-rp4q.onrender.com",
+      "https://chatcord-rp4q.onrender.com", // Replace with your actual Render domain
       "http://localhost:3000"
     ],
     methods: ["GET", "POST"],
@@ -18,7 +18,14 @@ const io = require("socket.io")(server, {
   }
 });
 
-// Health check route
+// === Serve Frontend Files ===
+app.use(express.static(path.join(__dirname, "public"))); // Assumes main.html is inside /public
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "main.html"));
+});
+
+// === Health Check Endpoint ===
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
@@ -27,23 +34,20 @@ app.get("/health", (req, res) => {
   });
 });
 
-// === In-Memory Data ===
-const rooms = new Map(); // Map<roomCode, { name, code, users: [] }>
-const userRooms = new Map(); // Map<socket.id, roomCode>
+// === In-Memory Storage ===
+const rooms = new Map();
+const userRooms = new Map();
 
 // === Room Code Generator ===
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () =>
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-// === Socket.IO Logic ===
+// === Socket.IO Handling ===
 io.on("connection", (socket) => {
   console.log("✅ New connection:", socket.id);
 
-  // === Create Room ===
   socket.on("create_room", ({ roomName, user }) => {
     const code = generateRoomCode();
     const room = {
@@ -60,7 +64,6 @@ io.on("connection", (socket) => {
     console.log(`📦 Room created: ${code}`);
   });
 
-  // === Join Room ===
   socket.on("join_room", ({ roomCode, user }) => {
     const room = rooms.get(roomCode);
     if (!room) {
@@ -76,7 +79,6 @@ io.on("connection", (socket) => {
     socket.to(roomCode).emit("user_joined", user);
   });
 
-  // === Get Room Users ===
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
     if (room) {
@@ -84,13 +86,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  // === Send Message ===
   socket.on("send_message", (message) => {
     const roomCode = message.roomCode;
     socket.to(roomCode).emit("new_message", message);
+    socket.emit("new_message", message);
   });
 
-  // === Leave Room ===
   socket.on("leave_room", ({ roomCode, userId }) => {
     const room = rooms.get(roomCode);
     if (room) {
@@ -101,7 +102,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // === Disconnect Cleanup ===
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", socket.id);
     const roomCode = userRooms.get(socket.id);
@@ -121,10 +121,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Serve static files (for avatars)
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// === Server Start ===
+// === Start Server ===
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
