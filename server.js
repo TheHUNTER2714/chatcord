@@ -29,7 +29,7 @@ app.get("/health", (req, res) => {
 });
 
 // === In-Memory Data ===
-const rooms = new Map(); // Map<roomCode, { name, code, users: [] }>
+const rooms = new Map(); // Map<roomCode, { name, code, users: Set() }>
 const userRooms = new Map(); // Map<socket.id, roomCode>
 
 // === Room Code Generator ===
@@ -50,7 +50,7 @@ io.on("connection", (socket) => {
     const room = {
       name: roomName,
       code: code,
-      users: [{ id: socket.id, name: user.name }]
+      users: new Set([{ id: socket.id, name: user.name }])
     };
 
     rooms.set(code, room);
@@ -69,11 +69,17 @@ io.on("connection", (socket) => {
       return;
     }
 
-    room.users.push({ id: socket.id, name: user.name });
+    // Avoid joining if user already exists in the room
+    if ([...room.users].some(u => u.id === socket.id)) {
+      socket.emit("user_already_in_room");
+      return;
+    }
+
+    room.users.add({ id: socket.id, name: user.name });
     userRooms.set(socket.id, roomCode);
     socket.join(roomCode);
 
-    socket.emit("room_joined", { room, users: room.users });
+    socket.emit("room_joined", { room, users: [...room.users] });
     socket.to(roomCode).emit("user_joined", user);
   });
 
@@ -81,7 +87,7 @@ io.on("connection", (socket) => {
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
     if (room) {
-      socket.emit("room_users", room.users);
+      socket.emit("room_users", [...room.users]);
     }
   });
 
@@ -96,7 +102,7 @@ io.on("connection", (socket) => {
   socket.on("leave_room", ({ roomCode, userId }) => {
     const room = rooms.get(roomCode);
     if (room) {
-      room.users = room.users.filter(u => u.id !== userId);
+      room.users = [...room.users].filter(u => u.id !== userId);
       socket.leave(roomCode);
       userRooms.delete(socket.id);
       socket.to(roomCode).emit("user_left", { id: userId });
@@ -112,11 +118,11 @@ io.on("connection", (socket) => {
     const room = rooms.get(roomCode);
     if (!room) return;
 
-    room.users = room.users.filter(u => u.id !== socket.id);
+    room.users = [...room.users].filter(u => u.id !== socket.id);
     socket.to(roomCode).emit("user_left", { id: socket.id });
     userRooms.delete(socket.id);
 
-    if (room.users.length === 0) {
+    if (room.users.size === 0) {
       rooms.delete(roomCode);
       console.log(`🗑️ Room deleted: ${roomCode}`);
     }
