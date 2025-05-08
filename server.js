@@ -1,4 +1,6 @@
 const express = require("express");
+const path = require("path");
+const multer = require("multer");
 const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, { 
@@ -17,13 +19,35 @@ const io = require("socket.io")(server, {
   }
 });
 
-// Health check
+// Multer setup for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");  // Specify upload directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));  // Unique filename based on timestamp
+  }
+});
+
+const upload = multer({ storage });
+
+// Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
     websocket: io.engine.clientsCount,
     uptime: process.uptime()
   });
+});
+
+// Avatar upload route
+app.post("/upload-avatar", upload.single("avatar"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send("No file uploaded");
+  }
+  // Send the URL of the uploaded avatar back to the client
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  res.send({ avatarUrl });
 });
 
 // === In-Memory Data ===
@@ -87,7 +111,6 @@ io.on("connection", (socket) => {
   socket.on("send_message", (message) => {
     const roomCode = message.roomCode;
     socket.to(roomCode).emit("new_message", message);
-    socket.emit("new_message", message); // This will send the message back to the sender
   });
 
   // === Leave Room ===
@@ -120,6 +143,9 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+// Serve static files (for avatars)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // === Server Start ===
 const PORT = process.env.PORT || 3000;
