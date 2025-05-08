@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path");
-const multer = require("multer");
 const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, { 
@@ -19,18 +18,6 @@ const io = require("socket.io")(server, {
   }
 });
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");  // Specify upload directory
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));  // Unique filename based on timestamp
-  }
-});
-
-const upload = multer({ storage });
-
 // Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -38,16 +25,6 @@ app.get("/health", (req, res) => {
     websocket: io.engine.clientsCount,
     uptime: process.uptime()
   });
-});
-
-// Avatar upload route
-app.post("/upload-avatar", upload.single("avatar"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send("No file uploaded");
-  }
-  // Send the URL of the uploaded avatar back to the client
-  const avatarUrl = `/uploads/${req.file.filename}`;
-  res.send({ avatarUrl });
 });
 
 // === In-Memory Data ===
