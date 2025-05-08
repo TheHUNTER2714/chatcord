@@ -583,7 +583,24 @@
 
             socket.on('user_joined', (user) => {
                 showNotification(`${user.name} joined the room`);
-                loadUsers();
+                if (userList) {
+                  // Check if user is already in list to avoid duplication
+                  const existingUser = Array.from(userList.children).find(li => li.textContent.includes(user.name));
+                  if (existingUser) return;
+
+                  const li = document.createElement('li');
+                  li.className = 'flex items-center user-item p-2 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer';
+
+                  const isCurrentUser = user.id === currentUser?.id;
+
+                  li.innerHTML = `
+                  <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+                  <span class="text-white ${isCurrentUser ? 'font-semibold' : ''}">${user.name}</span>
+                  ${isCurrentUser ? ' <span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}
+                  `;
+
+                userList.appendChild(li);
+              }    
             });
 
             socket.on('user_left', (user) => {
