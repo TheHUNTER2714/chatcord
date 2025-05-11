@@ -328,18 +328,18 @@
                 </button>
             </div>
             
-            <div class="p-5 grid grid-cols-1 md:grid-cols-4 gap-5 chat-container">
+            <div class="p-5 flex flex-col md:grid md:grid-cols-4 gap-5 chat-container">
                 <!-- User List -->
                 <div class="hidden md:block md:col-span-1 bg-white bg-opacity-10 rounded-xl p-4">
                     <h3 class="font-bold text-white pb-3 border-b border-white border-opacity-20">Users in Room</h3>
-                    <ul id="user-list" class="mt-3 space-y-3 user-list">
+                    <ul id="user-list" class="mt-3 space-y-3 user-list max-h-[300px] md:max-h-full">
                         <!-- Users will be added here -->
                     </ul>
                 </div>
                 
                 <!-- Chat Area -->
                 <div class="col-span-1 md:col-span-3 flex flex-col">
-                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container">
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container" style="scroll-padding-top: 80px;">
                         <!-- Messages will be added here -->
                         <div class="text-center text-white text-opacity-80 my-6">
                             <p class="text-lg">Welcome to the chat room!</p>
@@ -350,7 +350,7 @@
                     <div id="typing-indicator" class="mt-2 h-5 text-sm text-white"></div>
 <div class="mt-auto">
                         <form id="message-form" class="flex shadow-lg">
-                            <input type="text" id="message-input" class="flex-1 px-5 py-3 border-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm transition-all duration-200" placeholder="Type a message...">
+                            <input type="text" id="message-input" class="flex-1 px-4 py-3 text-sm border-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm transition-all duration-200" placeholder="Type a message...">
                             <button type="submit" class="btn bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-5 rounded-r-xl hover:from-indigo-700 hover:to-purple-700 transition duration-300">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -871,6 +871,8 @@
         }
         
         function scrollToBottom() {
+    const lastMessage = messagesContainer.lastElementChild;
+    if (lastMessage) lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
