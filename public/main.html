@@ -347,7 +347,8 @@
                         </div>
                     </div>
                     
-                    <div class="mt-auto">
+                    <div id="typing-indicator" class="mt-2 h-5 text-sm text-white"></div>
+<div class="mt-auto">
                         <form id="message-form" class="flex shadow-lg">
                             <input type="text" id="message-input" class="flex-1 px-5 py-3 border-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm transition-all duration-200" placeholder="Type a message...">
                             <button type="submit" class="btn bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-5 rounded-r-xl hover:from-indigo-700 hover:to-purple-700 transition duration-300">
@@ -614,6 +615,23 @@
             });
 
             socket.on('room_users', (users) => {
+            socket.on("user_typing", ({ user }) => {
+                const typingEl = document.getElementById("typing-indicator");
+                if (typingEl) {
+                    typingEl.innerHTML = `<div class="typing-animation text-white text-sm ml-3"><span>.</span><span>.</span><span>.</span> ${user.name} is typing...</div>`;
+                    clearTimeout(window.typingTimeout);
+                    window.typingTimeout = setTimeout(() => {
+                        typingEl.innerHTML = "";
+                    }, 1500);
+                }
+            });
+
+            messageInput.addEventListener('input', () => {
+                if (currentRoom && currentUser) {
+                    socket.emit('typing', { roomCode: currentRoom.code, user: currentUser });
+                }
+            });
+
                 updateUserList(users);
             });
 
