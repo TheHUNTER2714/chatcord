@@ -19,8 +19,7 @@ const io = require("socket.io")(server, {
 });
 
 // === Serve Frontend Files ===
-app.use(express.static(path.join(__dirname, "public"))); // Assumes main.html is inside /public
-
+app.use(express.static(path.join(__dirname, "public")));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "main.html"));
 });
@@ -46,11 +45,11 @@ function generateRoomCode() {
 
 // === Socket.IO Handling ===
 io.on("connection", (socket) => {
+  console.log("✅ New connection:", socket.id);
+
   socket.on("typing", ({ roomCode, user }) => {
     socket.to(roomCode).emit("user_typing", { user });
   });
-
-  console.log("✅ New connection:", socket.id);
 
   socket.on("create_room", ({ roomName, user }) => {
     const code = generateRoomCode();
@@ -63,30 +62,27 @@ io.on("connection", (socket) => {
     rooms.set(code, room);
     userRooms.set(socket.id, code);
     socket.join(code);
-
     socket.emit("room_created", room);
     console.log(`📦 Room created: ${code}`);
   });
 
-socket.on("join_room", ({ roomCode, user }) => {
-  const room = rooms.get(roomCode);
-  if (!room) {
-    socket.emit("room_not_found");
-    return;
-  }
+  socket.on("join_room", ({ roomCode, user }) => {
+    const room = rooms.get(roomCode);
+    if (!room) {
+      socket.emit("room_not_found");
+      return;
+    }
 
-  // Prevent duplicate entries
-  const alreadyInRoom = room.users.some(u => u.id === socket.id);
-  if (!alreadyInRoom) {
-    room.users.push({ id: socket.id, name: user.name });
-  }
+    const alreadyInRoom = room.users.some(u => u.id === socket.id);
+    if (!alreadyInRoom) {
+      room.users.push({ id: socket.id, name: user.name });
+    }
 
-  userRooms.set(socket.id, roomCode);
-  socket.join(roomCode);
-
-  socket.emit("room_joined", { room, users: room.users });
-  socket.to(roomCode).emit("user_joined", user);
-});
+    userRooms.set(socket.id, roomCode);
+    socket.join(roomCode);
+    socket.emit("room_joined", { room, users: room.users });
+    socket.to(roomCode).emit("user_joined", user);
+  });
 
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
@@ -115,7 +111,6 @@ socket.on("join_room", ({ roomCode, user }) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Disconnected:", socket.id);
     const roomCode = userRooms.get(socket.id);
     const room = rooms.get(roomCode);
     if (!room) return;
