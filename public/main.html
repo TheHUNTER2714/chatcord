@@ -36,18 +36,18 @@
         }
 
         .chat-container {
-            height: calc(autovh - autopx);
+            height: calc(100vh - 180px);
             min-height: 400px;
         }
         
         .messages-container {
-            height: calc(auto% - 80px);
+            height: calc(100% - 60px);
             overflow-y: auto;
             scroll-behavior: smooth;
         }
         
         .user-list {
-            height: auto%;
+            height: 100%;
             overflow-y: auto;
             scroll-behavior: smooth;
         }
@@ -207,7 +207,7 @@
             }
 
             .container {
-                width: 10000%;
+                width: 100%;
                 max-width: none;
             }
 
@@ -216,7 +216,23 @@
                 border: 1px solid #e2e8f0;
             }
         }
-    </style>
+    
+/* Typing Indicator Styles */
+.typing-indicator {
+    animation: fadeIn 0.3s;
+    height: 24px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+}
+
+.typing-text {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+</style>
 </head>
 <body>
     <div id="particles-js"></div>
@@ -339,7 +355,7 @@
                 
                 <!-- Chat Area -->
                 <div class="col-span-1 md:col-span-3 flex flex-col">
-                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container" style="scroll-padding-top: 80px;">
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container">
                         <!-- Messages will be added here -->
                         <div class="text-center text-white text-opacity-80 my-6">
                             <p class="text-lg">Welcome to the chat room!</p>
@@ -347,8 +363,15 @@
                         </div>
                     </div>
                     
-                    <div id="typing-indicator" class="mt-2 h-5 text-sm text-white"></div>
-<div class="mt-auto">
+                    
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="typing-indicator hidden">
+            <div class="typing-text text-white text-opacity-80 text-sm">
+                <span id="typing-users"></span> is typing...
+            </div>
+        </div>
+        <div class="mt-auto">
+        
                         <form id="message-form" class="flex shadow-lg">
                             <input type="text" id="message-input" class="flex-1 px-5 py-3 border-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm transition-all duration-200" placeholder="Type a message...">
                             <button type="submit" class="btn bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-5 rounded-r-xl hover:from-indigo-700 hover:to-purple-700 transition duration-300">
@@ -614,24 +637,56 @@
                 scrollToBottom();
             });
 
-            socket.on('room_users', (users) => {
-            socket.on("user_typing", ({ user }) => {
-                const typingEl = document.getElementById("typing-indicator");
-                if (typingEl) {
-                    typingEl.innerHTML = `<div class="typing-animation text-white text-sm ml-3"><span>.</span><span>.</span><span>.</span> ${user.name} is typing...</div>`;
-                    clearTimeout(window.typingTimeout);
-                    window.typingTimeout = setTimeout(() => {
-                        typingEl.innerHTML = "";
-                    }, 1500);
-                }
-            });
+            
+// Typing indicator logic
+let typingUsers = [];
+let typingTimeout;
+const TYPING_TIMEOUT = 2000;
 
-            messageInput.addEventListener('input', () => {
-                if (currentRoom && currentUser) {
-                    socket.emit('typing', { roomCode: currentRoom.code, user: currentUser });
-                }
-            });
+socket.on('user_typing', (users) => {
+    showTypingIndicator(users.filter(user => user.id !== currentUser?.id));
+});
 
+socket.on('user_stopped_typing', (users) => {
+    showTypingIndicator(users.filter(user => user.id !== currentUser?.id));
+});
+
+messageInput.addEventListener('input', handleTyping);
+messageInput.addEventListener('blur', handleStopTyping);
+
+function handleTyping() {
+    if (!currentRoom || !currentUser) return;
+    socket.emit('typing_start', {
+        roomCode: currentRoom.code,
+        user: currentUser
+    });
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(handleStopTyping, TYPING_TIMEOUT);
+}
+
+function handleStopTyping() {
+    if (!currentRoom || !currentUser) return;
+    socket.emit('typing_stop', {
+        roomCode: currentRoom.code,
+        user: currentUser
+    });
+}
+
+function showTypingIndicator(users) {
+    const typingIndicator = document.getElementById('typing-indicator');
+    const typingUsersSpan = document.getElementById('typing-users');
+    if (users.length === 0) {
+        typingIndicator.classList.add('hidden');
+        return;
+    }
+
+    const names = users.map(user => user.name);
+    typingUsersSpan.textContent = names.join(', ');
+    typingIndicator.classList.remove('hidden');
+}
+
+socket.on('room_users', (users) => {
                 updateUserList(users);
             });
 
@@ -871,8 +926,6 @@
         }
         
         function scrollToBottom() {
-    const lastMessage = messagesContainer.lastElementChild;
-    if (lastMessage) lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
