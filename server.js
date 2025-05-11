@@ -4,83 +4,100 @@ const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
-    origin: ["https://chatcord-rp4q.onrender.com", "http://localhost:3000"],
+    origin: [
+      "https://chatcord-rp4q.onrender.com", // Replace with your actual Render domain
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   },
   transports: ["websocket"],
-  connectionStateRecovery: { maxDisconnectionDuration: 120000 }
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true
+  }
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
+// === Serve Frontend Files ===
+app.use(express.static(path.join(__dirname, "public"))); // Assumes main.html is inside /public
 
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "main.html")));
-app.get("/health", (req, res) => res.status(200).json({ status: "healthy", websocket: io.engine.clientsCount, uptime: process.uptime() }));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "main.html"));
+});
 
-// In-memory stores
+// === Health Check Endpoint ===
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    websocket: io.engine.clientsCount,
+    uptime: process.uptime()
+  });
+});
+
+// === In-Memory Storage ===
 const rooms = new Map();
 const userRooms = new Map();
-const typingUsers = new Map();
 
-// Helpers
+// === Room Code Generator ===
 function generateRoomCode() {
-  return Array.from({length: 6}, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-// Socket.io
+// === Socket.IO Handling ===
 io.on("connection", (socket) => {
+  socket.on("typing", ({ roomCode, user }) => {
+    socket.to(roomCode).emit("user_typing", { user });
+  });
   console.log("✅ New connection:", socket.id);
 
   socket.on("create_room", ({ roomName, user }) => {
     const code = generateRoomCode();
-    const room = { name: roomName, code, users: [{ id: socket.id, name: user.name }] };
+    const room = {
+      name: roomName,
+      code: code,
+      users: [{ id: socket.id, name: user.name }]
+    };
+
     rooms.set(code, room);
     userRooms.set(socket.id, code);
     socket.join(code);
+
     socket.emit("room_created", room);
+    console.log(`📦 Room created: ${code}`);
   });
 
-  socket.on("join_room", ({ roomCode, user }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return socket.emit("room_not_found");
-    
-    if (!room.users.some(u => u.id === socket.id)) {
-      room.users.push({ id: socket.id, name: user.name });
-    }
-    
-    userRooms.set(socket.id, roomCode);
-    socket.join(roomCode);
-    socket.emit("room_joined", { room, users: room.users });
-    socket.to(roomCode).emit("user_joined", user);
-  });
+socket.on("join_room", ({ roomCode, user }) => {
+  const room = rooms.get(roomCode);
+  if (!room) {
+    socket.emit("room_not_found");
+    return;
+  }
+
+  // Prevent duplicate entries
+  const alreadyInRoom = room.users.some(u => u.id === socket.id);
+  if (!alreadyInRoom) {
+    room.users.push({ id: socket.id, name: user.name });
+  }
+
+  userRooms.set(socket.id, roomCode);
+  socket.join(roomCode);
+
+  socket.emit("room_joined", { room, users: room.users });
+  socket.to(roomCode).emit("user_joined", user);
+});
 
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
-    if (room) socket.emit("room_users", room.users);
+    if (room) {
+      socket.emit("room_users", room.users);
+    }
   });
 
   socket.on("send_message", (message) => {
-    socket.to(message.roomCode).emit("new_message", message);
+    const roomCode = message.roomCode;
+    socket.to(roomCode).emit("new_message", message);
     socket.emit("new_message", message);
-  });
-
-  // Typing indicators
-  socket.on("typing_start", ({ roomCode, user }) => {
-    if (!typingUsers.has(roomCode)) typingUsers.set(roomCode, new Set());
-    typingUsers.get(roomCode).add(user.id);
-    const users = Array.from(typingUsers.get(roomCode)).map(id => 
-      rooms.get(roomCode)?.users.find(u => u.id === id)).filter(Boolean);
-    io.to(roomCode).emit("user_typing", users);
-  });
-
-  socket.on("typing_stop", ({ roomCode, user }) => {
-    if (typingUsers.has(roomCode)) {
-      typingUsers.get(roomCode).delete(user.id);
-      const users = Array.from(typingUsers.get(roomCode)).map(id => 
-        rooms.get(roomCode)?.users.find(u => u.id === id)).filter(Boolean);
-      io.to(roomCode).emit("user_stopped_typing", users);
-    }
   });
 
   socket.on("leave_room", ({ roomCode, userId }) => {
@@ -94,29 +111,26 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    const roomCode = userRooms.get(socket.id);
-    if (roomCode) {
-      // Clean up typing status
-      if (typingUsers.has(roomCode)) {
-        typingUsers.get(roomCode).delete(socket.id);
-        const users = Array.from(typingUsers.get(roomCode)).map(id => 
-          rooms.get(roomCode)?.users.find(u => u.id === id)).filter(Boolean);
-        io.to(roomCode).emit("user_stopped_typing", users);
-      }
-
-      // Clean up room data
-      const room = rooms.get(roomCode);
-      if (room) {
-        room.users = room.users.filter(u => u.id !== socket.id);
-        socket.to(roomCode).emit("user_left", { id: socket.id });
-        if (room.users.length === 0) rooms.delete(roomCode);
-      }
-      userRooms.delete(socket.id);
-    }
     console.log("❌ Disconnected:", socket.id);
+    const roomCode = userRooms.get(socket.id);
+    if (!roomCode) return;
+
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    room.users = room.users.filter(u => u.id !== socket.id);
+    socket.to(roomCode).emit("user_left", { id: socket.id });
+    userRooms.delete(socket.id);
+
+    if (room.users.length === 0) {
+      rooms.delete(roomCode);
+      console.log(`🗑️ Room deleted: ${roomCode}`);
+    }
   });
 });
 
-// Start server
+// === Start Server ===
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
