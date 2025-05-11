@@ -36,18 +36,18 @@
         }
 
         .chat-container {
-            height: calc(100vh - 180px);
+            height: calc(autovh - autopx);
             min-height: 400px;
         }
         
         .messages-container {
-            height: calc(100% - 60px);
+            height: calc(auto% - 80px);
             overflow-y: auto;
             scroll-behavior: smooth;
         }
         
         .user-list {
-            height: 100%;
+            height: auto%;
             overflow-y: auto;
             scroll-behavior: smooth;
         }
@@ -182,21 +182,8 @@
             from { opacity: 1; }
             to { opacity: 0; visibility: hidden; }
         }
-
-        .typing-indicator {
-            animation: fadeIn 0.3s;
-            height: 24px;
-            margin-bottom: 8px;
-            padding: 0 16px;
-        }
-
-        .typing-text {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 4px 12px;
-            border-radius: 12px;
-            display: inline-block;
-        }
         
+        /* For PDF optimizations */
         @media print {
             body {
                 width: 100%;
@@ -220,7 +207,7 @@
             }
 
             .container {
-                width: 100%;
+                width: 10000%;
                 max-width: none;
             }
 
@@ -244,11 +231,13 @@
     </div>
     
     <div class="container mx-auto px-4 py-8">
+        <!-- Logo and Header -->
         <div class="text-center mb-8">
             <h1 class="text-5xl font-bold text-white drop-shadow-lg">ChatCord</h1>
             <p class="text-white text-opacity-90 mt-2 text-lg">Create or join private chat rooms with access codes</p>
         </div>
         
+        <!-- Landing Page -->
         <div id="landing-page" class="max-w-md mx-auto glass-effect p-8 rounded-2xl shadow-xl page-transition">
             <div class="mb-6">
                 <label for="username" class="block text-white font-medium mb-2">Your Display Name</label>
@@ -281,6 +270,7 @@
             </div>
         </div>
         
+        <!-- Room Creation Page -->
         <div id="create-room-page" class="max-w-md mx-auto glass-effect p-8 rounded-2xl shadow-xl hidden page-transition">
             <h2 class="text-2xl font-bold text-center mb-6 text-white">Create a New Room</h2>
             
@@ -299,6 +289,7 @@
             </div>
         </div>
         
+        <!-- Room Code Display Page -->
         <div id="room-code-page" class="max-w-md mx-auto glass-effect p-8 rounded-2xl shadow-xl hidden page-transition">
             <h2 class="text-2xl font-bold text-center mb-6 text-white">Room Created Successfully!</h2>
             
@@ -319,6 +310,7 @@
             </div>
         </div>
         
+        <!-- Chat Room Page -->
         <div id="chat-room-page" class="max-w-5xl mx-auto glass-effect rounded-2xl shadow-xl hidden page-transition overflow-hidden">
             <div class="bg-gradient-to-r from-indigo-800 to-purple-800 text-white p-5 rounded-t-2xl flex justify-between items-center">
                 <div>
@@ -337,27 +329,26 @@
             </div>
             
             <div class="p-5 grid grid-cols-1 md:grid-cols-4 gap-5 chat-container">
+                <!-- User List -->
                 <div class="hidden md:block md:col-span-1 bg-white bg-opacity-10 rounded-xl p-4">
                     <h3 class="font-bold text-white pb-3 border-b border-white border-opacity-20">Users in Room</h3>
                     <ul id="user-list" class="mt-3 space-y-3 user-list">
+                        <!-- Users will be added here -->
                     </ul>
                 </div>
                 
+                <!-- Chat Area -->
                 <div class="col-span-1 md:col-span-3 flex flex-col">
-                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container">
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-5 bg-white bg-opacity-10 rounded-xl mb-4 flex flex-col space-y-4 messages-container" style="scroll-padding-top: 80px;">
+                        <!-- Messages will be added here -->
                         <div class="text-center text-white text-opacity-80 my-6">
                             <p class="text-lg">Welcome to the chat room!</p>
                             <p class="text-sm mt-2">Start sending messages to communicate.</p>
                         </div>
                     </div>
                     
-                    <div id="typing-indicator" class="typing-indicator hidden">
-                        <div class="typing-text text-white text-opacity-80 text-sm">
-                            <span id="typing-users"></span> is typing...
-                        </div>
-                    </div>
-
-                    <div class="mt-auto">
+                    <div id="typing-indicator" class="mt-2 h-5 text-sm text-white"></div>
+<div class="mt-auto">
                         <form id="message-form" class="flex shadow-lg">
                             <input type="text" id="message-input" class="flex-1 px-5 py-3 border-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm transition-all duration-200" placeholder="Type a message...">
                             <button type="submit" class="btn bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-5 rounded-r-xl hover:from-indigo-700 hover:to-purple-700 transition duration-300">
@@ -371,173 +362,442 @@
     </div>
 
     <script>
+        // Particles.js configuration
         document.addEventListener('DOMContentLoaded', function() {
             particlesJS('particles-js', {
                 "particles": {
-                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#ffffff" },
-                    "shape": { "type": "circle" },
-                    "opacity": { "value": 0.5 },
-                    "size": { "value": 3, "random": true },
-                    "line_linked": { "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1 },
-                    "move": { "enable": true, "speed": 2 }
+                    "number": {
+                        "value": 80,
+                        "density": {
+                            "enable": true,
+                            "value_area": 800
+                        }
+                    },
+                    "color": {
+                        "value": "#ffffff"
+                    },
+                    "shape": {
+                        "type": "circle",
+                        "stroke": {
+                            "width": 0,
+                            "color": "#000000"
+                        },
+                        "polygon": {
+                            "nb_sides": 5
+                        }
+                    },
+                    "opacity": {
+                        "value": 0.5,
+                        "random": false,
+                        "anim": {
+                            "enable": false,
+                            "speed": 1,
+                            "opacity_min": 0.1,
+                            "sync": false
+                        }
+                    },
+                    "size": {
+                        "value": 3,
+                        "random": true,
+                        "anim": {
+                            "enable": false,
+                            "speed": 40,
+                            "size_min": 0.1,
+                            "sync": false
+                        }
+                    },
+                    "line_linked": {
+                        "enable": true,
+                        "distance": 150,
+                        "color": "#ffffff",
+                        "opacity": 0.4,
+                        "width": 1
+                    },
+                    "move": {
+                        "enable": true,
+                        "speed": 2,
+                        "direction": "none",
+                        "random": false,
+                        "straight": false,
+                        "out_mode": "out",
+                        "bounce": false,
+                        "attract": {
+                            "enable": false,
+                            "rotateX": 600,
+                            "rotateY": 1200
+                        }
+                    }
                 },
                 "interactivity": {
                     "detect_on": "canvas",
                     "events": {
-                        "onhover": { "enable": true, "mode": "grab" },
-                        "onclick": { "enable": true, "mode": "push" },
+                        "onhover": {
+                            "enable": true,
+                            "mode": "grab"
+                        },
+                        "onclick": {
+                            "enable": true,
+                            "mode": "push"
+                        },
                         "resize": true
                     },
                     "modes": {
-                        "grab": { "distance": 140, "line_linked": { "opacity": 1 } },
-                        "bubble": { "distance": 400, "size": 40, "duration": 2 },
-                        "repulse": { "distance": 200, "duration": 0.4 },
-                        "push": { "particles_nb": 4 },
-                        "remove": { "particles_nb": 2 }
+                        "grab": {
+                            "distance": 140,
+                            "line_linked": {
+                                "opacity": 1
+                            }
+                        },
+                        "bubble": {
+                            "distance": 400,
+                            "size": 40,
+                            "duration": 2,
+                            "opacity": 8,
+                            "speed": 3
+                        },
+                        "repulse": {
+                            "distance": 200,
+                            "duration": 0.4
+                        },
+                        "push": {
+                            "particles_nb": 4
+                        },
+                        "remove": {
+                            "particles_nb": 2
+                        }
                     }
                 },
                 "retina_detect": true
             });
         });
 
+        // Notification system
         function showNotification(message) {
             const notification = document.getElementById('notification');
             const notificationText = document.getElementById('notification-text');
+            
             notificationText.textContent = message;
             notification.style.display = 'block';
-            setTimeout(() => notification.style.display = 'none', 3000);
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
         }
 
         // Utility functions
         function generateRoomCode() {
-            return Array.from({length: 6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('');
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
         }
-
-        function getCurrentTimestamp() { return new Date().toISOString(); }
-
+        
+        function getCurrentTimestamp() {
+            return new Date().toISOString();
+        }
+        
         function formatTime(timestamp) {
-            return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-
+        
         // DOM Elements
-        const elements = {
-            landingPage: document.getElementById('landing-page'),
-            createRoomPage: document.getElementById('create-room-page'),
-            roomCodePage: document.getElementById('room-code-page'),
-            chatRoomPage: document.getElementById('chat-room-page'),
-            usernameInput: document.getElementById('username'),
-            createRoomBtn: document.getElementById('create-room-btn'),
-            joinRoomBtn: document.getElementById('join-room-btn'),
-            roomCodeInput: document.getElementById('room-code'),
-            createRoomBackBtn: document.getElementById('create-room-back-btn'),
-            newRoomNameInput: document.getElementById('new-room-name'),
-            createRoomConfirmBtn: document.getElementById('create-room-confirm-btn'),
-            roomCodeDisplay: document.getElementById('room-code-display'),
-            copyCodeBtn: document.getElementById('copy-code-btn'),
-            enterRoomBtn: document.getElementById('enter-room-btn'),
-            roomNameDisplay: document.getElementById('room-name-display'),
-            roomCodeBadge: document.getElementById('room-code-badge'),
-            copyCodeBtn2: document.getElementById('copy-code-btn-2'),
-            leaveRoomBtn: document.getElementById('leave-room-btn'),
-            userList: document.getElementById('user-list'),
-            messagesContainer: document.getElementById('messages-container'),
-            messageForm: document.getElementById('message-form'),
-            messageInput: document.getElementById('message-input'),
-            typingIndicator: document.getElementById('typing-indicator'),
-            typingUsers: document.getElementById('typing-users')
-        };
-
+        const landingPage = document.getElementById('landing-page');
+        const createRoomPage = document.getElementById('create-room-page');
+        const roomCodePage = document.getElementById('room-code-page');
+        const chatRoomPage = document.getElementById('chat-room-page');
+        
+        const usernameInput = document.getElementById('username');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const roomCodeInput = document.getElementById('room-code');
+        
+        const createRoomBackBtn = document.getElementById('create-room-back-btn');
+        const newRoomNameInput = document.getElementById('new-room-name');
+        const createRoomConfirmBtn = document.getElementById('create-room-confirm-btn');
+        
+        const roomCodeDisplay = document.getElementById('room-code-display');
+        const copyCodeBtn = document.getElementById('copy-code-btn');
+        const enterRoomBtn = document.getElementById('enter-room-btn');
+        
+        const roomNameDisplay = document.getElementById('room-name-display');
+        const roomCodeBadge = document.getElementById('room-code-badge');
+        const copyCodeBtn2 = document.getElementById('copy-code-btn-2');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+        
+        const userList = document.getElementById('user-list');
+        const messagesContainer = document.getElementById('messages-container');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        
         // Application State
         let currentUser = null;
         let currentRoom = null;
         let socket = null;
-        let typingTimeout;
-        const TYPING_TIMEOUT = 2000;
-
+        
         // Initialize Application
         function init() {
-            socket = io(location.origin, { transports: ['websocket'], reconnection: true });
-
-            // Socket Event Handlers
-            socket
-                .on('connect', () => console.log('Connected'))
-                .on('disconnect', () => console.log('Disconnected'))
-                .on('connect_error', (err) => showNotification(`Connection error: ${err}`))
-                .on('room_created', handleRoomCreated)
-                .on('room_joined', handleRoomJoined)
-                .on('user_joined', handleUserJoined)
-                .on('user_left', handleUserLeft)
-                .on('new_message', addMessageToUI)
-                .on('room_users', updateUserList)
-                .on('room_not_found', handleRoomNotFound)
-                .on('user_typing', users => showTypingIndicator(users.filter(u => u.id !== currentUser?.id)))
-                .on('user_stopped_typing', users => showTypingIndicator(users.filter(u => u.id !== currentUser?.id)));
-
-            // Event Listeners
-            elements.createRoomBtn.addEventListener('click', handleCreateRoomClick);
-            elements.joinRoomBtn.addEventListener('click', handleJoinRoomClick);
-            elements.createRoomBackBtn.addEventListener('click', () => togglePages(elements.createRoomPage, elements.landingPage));
-            elements.createRoomConfirmBtn.addEventListener('click', handleCreateRoomConfirm);
-            elements.copyCodeBtn.addEventListener('click', () => copyToClipboard(elements.roomCodeDisplay.textContent));
-            elements.enterRoomBtn.addEventListener('click', () => enterChatRoom(currentRoom.code));
-            elements.leaveRoomBtn.addEventListener('click', handleLeaveRoom);
-            elements.copyCodeBtn2.addEventListener('click', () => copyToClipboard(elements.roomCodeBadge.textContent));
-            elements.messageForm.addEventListener('submit', handleSendMessage);
-            elements.messageInput.addEventListener('input', handleTyping);
-            elements.messageInput.addEventListener('blur', handleStopTyping);
-
-            document.querySelectorAll('input').forEach(input => {
-                input.addEventListener('focus', () => input.classList.add('ring-2'));
-                input.addEventListener('blur', function() { if(!this.value) this.classList.remove('ring-2') });
+            // Connect to Socket.io server
+                socket = io(location.origin, {
+                transports: ['websocket'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
             });
 
-            setTimeout(() => elements.usernameInput.focus(), 500);
-        }
+            // Socket.io event handlers
+            socket.on('connect', () => {
+                console.log('Connected to server');
+            });
 
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+            });
+
+            socket.on('connect_error', (err) => {
+                console.error('Connection error:', err);
+                showNotification('Connection error. Trying to reconnect...');
+            });
+
+            socket.on('room_created', (room) => {
+                currentRoom = room;
+                roomCodeDisplay.textContent = room.code;
+                createRoomPage.classList.add('hidden');
+                roomCodePage.classList.remove('hidden');
+                showNotification('Room created successfully!');
+            });
+
+            socket.on('room_joined', ({ room, users }) => {
+                currentRoom = room;
+                roomNameDisplay.textContent = room.name;
+                roomCodeBadge.textContent = room.code;
+                landingPage.classList.add('hidden');
+                createRoomPage.classList.add('hidden');
+                roomCodePage.classList.add('hidden');
+                chatRoomPage.classList.remove('hidden');
+                updateUserList(users);
+                showNotification(`Joined room: ${room.name}`);
+                messageInput.focus();
+            });
+
+            socket.on('user_joined', (user) => {
+                showNotification(`${user.name} joined the room`);
+                if (userList) {
+                  // Check if user is already in list to avoid duplication
+                  const existingUser = Array.from(userList.children).find(li => li.textContent.includes(user.name));
+                  if (existingUser) return;
+
+                  const li = document.createElement('li');
+                  li.className = 'flex items-center user-item p-2 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer';
+
+                  const isCurrentUser = user.id === currentUser?.id;
+
+                  li.innerHTML = `
+                  <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+                  <span class="text-white ${isCurrentUser ? 'font-semibold' : ''}">${user.name}</span>
+                  ${isCurrentUser ? ' <span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}
+                  `;
+
+                userList.appendChild(li);
+              }    
+            });
+
+            socket.on('user_left', (user) => {
+                showNotification(`${user.name} left the room`);
+                loadUsers();
+            });
+
+            socket.on('new_message', (message) => {
+                addMessageToUI(message);
+                scrollToBottom();
+            });
+
+            socket.on('room_users', (users) => {
+            socket.on("user_typing", ({ user }) => {
+                const typingEl = document.getElementById("typing-indicator");
+                if (typingEl) {
+                    typingEl.innerHTML = `<div class="typing-animation text-white text-sm ml-3"><span>.</span><span>.</span><span>.</span> ${user.name} is typing...</div>`;
+                    clearTimeout(window.typingTimeout);
+                    window.typingTimeout = setTimeout(() => {
+                        typingEl.innerHTML = "";
+                    }, 1500);
+                }
+            });
+
+            messageInput.addEventListener('input', () => {
+                if (currentRoom && currentUser) {
+                    socket.emit('typing', { roomCode: currentRoom.code, user: currentUser });
+                }
+            });
+
+                updateUserList(users);
+            });
+
+            socket.on('room_not_found', () => {
+                showNotification('Room not found. Please check the code and try again.');
+                roomCodeInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    roomCodeInput.classList.remove('ring-red-500');
+                }, 2000);
+            });
+
+            // Set up event listeners
+            createRoomBtn.addEventListener('click', handleCreateRoomClick);
+            joinRoomBtn.addEventListener('click', handleJoinRoomClick);
+            createRoomBackBtn.addEventListener('click', () => {
+                createRoomPage.classList.add('hidden');
+                landingPage.classList.remove('hidden');
+            });
+            createRoomConfirmBtn.addEventListener('click', handleCreateRoomConfirm);
+            copyCodeBtn.addEventListener('click', () => copyToClipboard(roomCodeDisplay.textContent));
+            enterRoomBtn.addEventListener('click', () => enterChatRoom(currentRoom.code));
+            leaveRoomBtn.addEventListener('click', handleLeaveRoom);
+            copyCodeBtn2.addEventListener('click', () => copyToClipboard(roomCodeBadge.textContent));
+            messageForm.addEventListener('submit', handleSendMessage);
+
+            // Add input placeholder animation
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.classList.add('ring-2');
+                });
+                input.addEventListener('blur', function() {
+                    if (!this.value) {
+                        this.classList.remove('ring-2');
+                    }
+                });
+            });
+
+            // Focus username on load
+            setTimeout(() => {
+                usernameInput.focus();
+            }, 500);
+        }
+        
         // Event Handlers
         function handleCreateRoomClick() {
-            const username = elements.usernameInput.value.trim();
-            if (!username) return showError(elements.usernameInput, 'Please enter your name first!');
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showNotification('Please enter your name first!');
+                usernameInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    usernameInput.classList.remove('ring-red-500');
+                }, 2000);
+                usernameInput.focus();
+                return;
+            }
             
-            currentUser = { id: socket.id, name: username };
-            togglePages(elements.landingPage, elements.createRoomPage);
-            setTimeout(() => elements.newRoomNameInput.focus(), 300);
+            // Store username
+            currentUser = {
+                id: socket.id,
+                name: username
+            };
+            
+            // Show room creation form
+            landingPage.classList.add('hidden');
+            createRoomPage.classList.remove('hidden');
+            
+            // Focus on room name input
+            setTimeout(() => {
+                newRoomNameInput.focus();
+            }, 300);
         }
-
+        
         function handleJoinRoomClick() {
-            const username = elements.usernameInput.value.trim();
-            const roomCode = elements.roomCodeInput.value.trim().toUpperCase();
+            const username = usernameInput.value.trim();
+            const roomCode = roomCodeInput.value.trim().toUpperCase();
             
-            if (!username) return showError(elements.usernameInput, 'Please enter your name first!');
-            if (!roomCode) return showError(elements.roomCodeInput, 'Please enter a room code!');
+            if (!username) {
+                showNotification('Please enter your name first!');
+                usernameInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    usernameInput.classList.remove('ring-red-500');
+                }, 2000);
+                usernameInput.focus();
+                return;
+            }
             
-            currentUser = { id: socket.id, name: username };
-            socket.emit('join_room', { roomCode, user: currentUser });
+            if (!roomCode) {
+                showNotification('Please enter a room code!');
+                roomCodeInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    roomCodeInput.classList.remove('ring-red-500');
+                }, 2000);
+                roomCodeInput.focus();
+                return;
+            }
+            
+            // Store username
+            currentUser = {
+                id: socket.id,
+                name: username
+            };
+            
+            // Try to join the room
+            socket.emit('join_room', {
+                roomCode: roomCode,
+                user: currentUser
+            });
         }
-
+        
         function handleCreateRoomConfirm() {
-            const roomName = elements.newRoomNameInput.value.trim();
-            if (!roomName) return showError(elements.newRoomNameInput, 'Please give your room a name!');
+            const roomName = newRoomNameInput.value.trim();
+            if (!roomName) {
+                showNotification('Please give your room a name!');
+                newRoomNameInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    newRoomNameInput.classList.remove('ring-red-500');
+                }, 2000);
+                newRoomNameInput.focus();
+                return;
+            }
             
-            socket.emit('create_room', { roomName, user: currentUser });
+            // Create a new room
+            socket.emit('create_room', {
+                roomName: roomName,
+                user: currentUser
+            });
         }
-
+        
         function handleLeaveRoom() {
             if (!currentRoom || !currentUser) return;
             
-            socket.emit('leave_room', { roomCode: currentRoom.code, userId: currentUser.id });
-            resetState();
-            togglePages(elements.chatRoomPage, elements.landingPage);
+            // Leave the room
+            socket.emit('leave_room', {
+                roomCode: currentRoom.code,
+                userId: currentUser.id
+            });
+            
+            // Reset state
+            currentUser = null;
+            currentRoom = null;
+            
+            // Clear messages and users
+            messagesContainer.innerHTML = `
+                <div class="text-center text-white text-opacity-80 my-6">
+                    <p class="text-lg">Welcome to the chat room!</p>
+                    <p class="text-sm mt-2">Start sending messages to communicate.</p>
+                </div>
+            `;
+            userList.innerHTML = '';
+            
+            // Go back to landing page
+            chatRoomPage.classList.add('hidden');
+            landingPage.classList.remove('hidden');
+            
+            // Clear inputs
+            messageInput.value = '';
             showNotification('You have left the room');
         }
-
+        
         function handleSendMessage(e) {
             e.preventDefault();
-            handleStopTyping();
-            const messageText = elements.messageInput.value.trim();
+            const messageText = messageInput.value.trim();
             if (!messageText || !currentRoom || !currentUser) return;
             
+            // Create message
             const message = {
                 roomCode: currentRoom.code,
                 userId: currentUser.id,
@@ -546,134 +806,91 @@
                 timestamp: getCurrentTimestamp()
             };
             
+            // Send message
             socket.emit('send_message', message);
-            elements.messageInput.value = '';
-            elements.messageInput.focus();
-        }
-
-        // Typing Handlers
-        function handleTyping() {
-            if (!currentRoom || !currentUser) return;
-            socket.emit('typing_start', { roomCode: currentRoom.code, user: currentUser });
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(handleStopTyping, TYPING_TIMEOUT);
-        }
-
-        function handleStopTyping() {
-            if (!currentRoom || !currentUser) return;
-            socket.emit('typing_stop', { roomCode: currentRoom.code, user: currentUser });
-        }
-
-        function showTypingIndicator(users) {
-            if (users.length === 0) {
-                elements.typingIndicator.classList.add('hidden');
-                return;
-            }
-            elements.typingUsers.textContent = users.map(u => u.name).join(', ');
-            elements.typingIndicator.classList.remove('hidden');
-        }
-
-        // Helper Functions
-        function togglePages(hide, show) {
-            hide.classList.add('hidden');
-            show.classList.remove('hidden');
-        }
-
-        function showError(element, message) {
-            showNotification(message);
-            element.classList.add('ring-2', 'ring-red-500');
-            setTimeout(() => element.classList.remove('ring-red-500'), 2000);
-            element.focus();
-        }
-
-        function resetState() {
-            currentUser = currentRoom = null;
-            elements.messagesContainer.innerHTML = `
-                <div class="text-center text-white text-opacity-80 my-6">
-                    <p class="text-lg">Welcome to the chat room!</p>
-                    <p class="text-sm mt-2">Start sending messages to communicate.</p>
-                </div>`;
-            elements.userList.innerHTML = '';
-            elements.messageInput.value = '';
-        }
-
-        function handleRoomCreated(room) {
-            currentRoom = room;
-            elements.roomCodeDisplay.textContent = room.code;
-            togglePages(elements.createRoomPage, elements.roomCodePage);
-            showNotification('Room created!');
-        }
-
-        function handleRoomJoined({ room, users }) {
-            currentRoom = room;
-            elements.roomNameDisplay.textContent = room.name;
-            elements.roomCodeBadge.textContent = room.code;
-            togglePages(elements.landingPage, elements.chatRoomPage);
-            updateUserList(users);
-            showNotification(`Joined ${room.name}`);
-            elements.messageInput.focus();
-        }
-
-        function handleUserJoined(user) {
-            showNotification(`${user.name} joined`);
-            if (Array.from(elements.userList.children).some(li => li.textContent.includes(user.name))) return;
             
-            const li = document.createElement('li');
-            li.className = 'flex items-center user-item p-2 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer';
-            li.innerHTML = `
-                <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                <span class="text-white ${user.id === currentUser?.id ? 'font-semibold' : ''}">${user.name}</span>
-                ${user.id === currentUser?.id ? '<span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}`;
-            elements.userList.appendChild(li);
+            // Clear input
+            messageInput.value = '';
+            
+            // Focus back on input
+            messageInput.focus();
         }
-
-        function handleUserLeft(user) {
-            showNotification(`${user.name} left`);
-            loadUsers();
+        
+        function enterChatRoom(roomCode) {
+            if (!currentUser) return;
+            
+            socket.emit('join_room', {
+                roomCode: roomCode,
+                user: currentUser
+            });
         }
-
+        
         function loadUsers() {
-            if (currentRoom) socket.emit('get_room_users', { roomCode: currentRoom.code });
+            if (!currentRoom) return;
+            
+            socket.emit('get_room_users', {
+                roomCode: currentRoom.code
+            });
         }
-
+        
         function updateUserList(users) {
-            elements.userList.innerHTML = '';
+            if (!userList) return;
+            
+            userList.innerHTML = '';
+            
             users.forEach(user => {
                 const li = document.createElement('li');
                 li.className = 'flex items-center user-item p-2 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer';
+                
+                const isCurrentUser = user.id === currentUser?.id;
+                
                 li.innerHTML = `
                     <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                    <span class="text-white ${user.id === currentUser?.id ? 'font-semibold' : ''}">${user.name}</span>
-                    ${user.id === currentUser?.id ? '<span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}`;
-                elements.userList.appendChild(li);
+                    <span class="text-white ${isCurrentUser ? 'font-semibold' : ''}">${user.name}</span>
+                    ${isCurrentUser ? ' <span class="ml-2 text-xs text-white text-opacity-70">(you)</span>' : ''}
+                `;
+                
+                userList.appendChild(li);
             });
         }
-
+        
         function addMessageToUI(message) {
             const isSelf = message.userId === currentUser?.id;
             const div = document.createElement('div');
             div.className = `message ${isSelf ? 'self' : 'other'} p-4 my-1`;
+            
             div.innerHTML = `
                 ${!isSelf ? `<div class="font-bold text-xs mb-1">${message.userName}</div>` : ''}
                 <div>${message.text}</div>
                 <div class="text-xs opacity-70 mt-1 ${isSelf ? 'text-blue-100' : 'text-gray-600'} text-right">
                     ${formatTime(message.timestamp)}
-                </div>`;
-            elements.messagesContainer.appendChild(div);
-            scrollToBottom();
+                </div>
+            `;
+            
+            messagesContainer.appendChild(div);
         }
-
+        
         function scrollToBottom() {
-            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+    const lastMessage = messagesContainer.lastElementChild;
+    if (lastMessage) lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
-
+        
+        // Helper functions
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text)
-                .then(() => showNotification('Code copied!'))
-                .catch(() => showNotification('Failed to copy'));
+                .then(() => {
+                    showNotification('Code copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    showNotification('Failed to copy code');
+                });
         }
-
+        
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
+
 </html>
