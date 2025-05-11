@@ -46,6 +46,10 @@ function generateRoomCode() {
 
 // === Socket.IO Handling ===
 io.on("connection", (socket) => {
+  socket.on("typing", ({ roomCode, user }) => {
+    socket.to(roomCode).emit("user_typing", { user });
+  });
+
   console.log("✅ New connection:", socket.id);
 
   socket.on("create_room", ({ roomName, user }) => {
@@ -100,24 +104,28 @@ socket.on("join_room", ({ roomCode, user }) => {
   socket.on("leave_room", ({ roomCode, userId }) => {
     const room = rooms.get(roomCode);
     if (room) {
+      const user = room.users.find(u => u.id === userId);
       room.users = room.users.filter(u => u.id !== userId);
       socket.leave(roomCode);
       userRooms.delete(socket.id);
-      socket.to(roomCode).emit("user_left", { id: userId });
+      if (user) {
+        socket.to(roomCode).emit("user_left", { id: userId, name: user.name });
+      }
     }
   });
 
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", socket.id);
     const roomCode = userRooms.get(socket.id);
-    if (!roomCode) return;
-
     const room = rooms.get(roomCode);
     if (!room) return;
 
+    const user = room.users.find(u => u.id === socket.id);
     room.users = room.users.filter(u => u.id !== socket.id);
-    socket.to(roomCode).emit("user_left", { id: socket.id });
     userRooms.delete(socket.id);
+    if (user) {
+      socket.to(roomCode).emit("user_left", { id: socket.id, name: user.name });
+    }
 
     if (room.users.length === 0) {
       rooms.delete(roomCode);
