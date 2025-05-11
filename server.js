@@ -5,7 +5,7 @@ const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
     origin: [
-      "https://chatcord-rp4q.onrender.com",
+      "https://chatcord-rp4q.onrender.com", // Replace with your actual Render domain
       "http://localhost:3000"
     ],
     methods: ["GET", "POST"],
@@ -19,7 +19,7 @@ const io = require("socket.io")(server, {
 });
 
 // === Serve Frontend Files ===
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"))); // Assumes main.html is inside /public
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "main.html"));
@@ -37,7 +37,6 @@ app.get("/health", (req, res) => {
 // === In-Memory Storage ===
 const rooms = new Map();
 const userRooms = new Map();
-const typingUsers = new Map();
 
 // === Room Code Generator ===
 function generateRoomCode() {
@@ -47,6 +46,9 @@ function generateRoomCode() {
 
 // === Socket.IO Handling ===
 io.on("connection", (socket) => {
+  socket.on("typing", ({ roomCode, user }) => {
+    socket.to(roomCode).emit("user_typing", { user });
+  });
   console.log("✅ New connection:", socket.id);
 
   socket.on("create_room", ({ roomName, user }) => {
@@ -65,24 +67,25 @@ io.on("connection", (socket) => {
     console.log(`📦 Room created: ${code}`);
   });
 
-  socket.on("join_room", ({ roomCode, user }) => {
-    const room = rooms.get(roomCode);
-    if (!room) {
-      socket.emit("room_not_found");
-      return;
-    }
+socket.on("join_room", ({ roomCode, user }) => {
+  const room = rooms.get(roomCode);
+  if (!room) {
+    socket.emit("room_not_found");
+    return;
+  }
 
-    const alreadyInRoom = room.users.some(u => u.id === socket.id);
-    if (!alreadyInRoom) {
-      room.users.push({ id: socket.id, name: user.name });
-    }
+  // Prevent duplicate entries
+  const alreadyInRoom = room.users.some(u => u.id === socket.id);
+  if (!alreadyInRoom) {
+    room.users.push({ id: socket.id, name: user.name });
+  }
 
-    userRooms.set(socket.id, roomCode);
-    socket.join(roomCode);
+  userRooms.set(socket.id, roomCode);
+  socket.join(roomCode);
 
-    socket.emit("room_joined", { room, users: room.users });
-    socket.to(roomCode).emit("user_joined", user);
-  });
+  socket.emit("room_joined", { room, users: room.users });
+  socket.to(roomCode).emit("user_joined", user);
+});
 
   socket.on("get_room_users", ({ roomCode }) => {
     const room = rooms.get(roomCode);
@@ -95,32 +98,6 @@ io.on("connection", (socket) => {
     const roomCode = message.roomCode;
     socket.to(roomCode).emit("new_message", message);
     socket.emit("new_message", message);
-  });
-
-  // Typing Indicators Handlers
-  socket.on("typing_start", ({ roomCode, user }) => {
-    if (!typingUsers.has(roomCode)) {
-      typingUsers.set(roomCode, new Set());
-    }
-    typingUsers.get(roomCode).add(user.id);
-    
-    const users = Array.from(typingUsers.get(roomCode))
-      .map(id => rooms.get(roomCode)?.users.find(u => u.id === id))
-      .filter(Boolean);
-    
-    io.to(roomCode).emit("user_typing", users);
-  });
-
-  socket.on("typing_stop", ({ roomCode, user }) => {
-    if (typingUsers.has(roomCode)) {
-      typingUsers.get(roomCode).delete(user.id);
-      
-      const users = Array.from(typingUsers.get(roomCode))
-        .map(id => rooms.get(roomCode)?.users.find(u => u.id === id))
-        .filter(Boolean);
-      
-      io.to(roomCode).emit("user_stopped_typing", users);
-    }
   });
 
   socket.on("leave_room", ({ roomCode, userId }) => {
@@ -136,17 +113,8 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", socket.id);
     const roomCode = userRooms.get(socket.id);
-    
-    // Clean up typing indicators
-    if (roomCode && typingUsers.has(roomCode)) {
-      typingUsers.get(roomCode).delete(socket.id);
-      const users = Array.from(typingUsers.get(roomCode))
-        .map(id => rooms.get(roomCode)?.users.find(u => u.id === id))
-        .filter(Boolean);
-      io.to(roomCode).emit("user_stopped_typing", users);
-    }
-
     if (!roomCode) return;
+
     const room = rooms.get(roomCode);
     if (!room) return;
 
