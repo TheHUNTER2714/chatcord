@@ -6,7 +6,7 @@
 
 ## 🚀 Live Demo
 
-Visit: [https://chatcord‑9slp.onrender.com](https://chatcord‑9slp.onrender.com)
+Visit: [https://chatcord-9slp.onrender.com](https://chatcord-9slp.onrender.com)
 
 ---
 
